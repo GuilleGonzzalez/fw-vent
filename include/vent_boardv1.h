@@ -16,7 +16,7 @@ extern "C" {
 #define BOARD_ID 99
 
 /** GENERIC **/
-#define PIN_SERVO 5
+#define PIN_SERVO 14
 
 
 #ifdef __cplusplus

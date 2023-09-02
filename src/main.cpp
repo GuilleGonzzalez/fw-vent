@@ -1,6 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoHA.h>
-#include "Adafruit_SHT4x.h"
+#include <Servo.h> 
 
 #include "vent_boardv1.h"
 
@@ -15,7 +15,8 @@
 WiFiClient client;
 HADevice device;
 HAMqtt mqtt(client, device);
-HANumber servo(VENT_ID);
+HANumber vent(VENT_ID);
+Servo servo;
 
 /* Global variables ***********************************************************/
 /* Function prototypes ********************************************************/
@@ -28,13 +29,15 @@ static void servo_cmd_cb(HANumeric number, HANumber* sender)
 {
 
 	if (!number.isSet()) {
-		// the reset command was send by Home Assistant
+		// The reset command was send by Home Assistant
 	} else {
-			int8_t num_int8 = number.toInt8();
+			int8_t num = number.toInt8();
+			int angle = map(num, -100, 100, 0, 120); 
+			servo.write(angle);
 			Serial.print("Number: ");
-			Serial.println(num_int8);
-			// Map from 0-100 to 0-255?
-			analogWrite(PIN_SERVO, num_int8);
+			Serial.print(num);
+			Serial.print(", angle: ");
+			Serial.println(angle);
 	}
 	
 	sender->setState(number); // report the selected option back to the HA panel
@@ -64,11 +67,15 @@ void setup()
 	device.setName(DEVICE_NAME);
 	device.setSoftwareVersion(FW_VERSION);
 
-	pinMode(PIN_SERVO, OUTPUT);
+	servo.attach(PIN_SERVO);
 
-	servo.setName(VENT_NAME);
-	servo.onCommand(servo_cmd_cb);
-	servo.setIcon("mdi:hvac");
+	vent.setName(VENT_NAME);
+	vent.onCommand(servo_cmd_cb);
+	vent.setIcon("mdi:hvac");
+	vent.setMin(-100);
+	vent.setMax(100);
+	vent.setStep(10);
+	vent.setUnitOfMeasurement("%");
 
 	mqtt.begin(MQTT_IP);
 }
